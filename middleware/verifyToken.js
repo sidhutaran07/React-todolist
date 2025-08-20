@@ -1,6 +1,6 @@
 
 // middleware/verifyToken.js
-const admin = require("firebase-admin");
+const admin = require("../config/firebaseAdmin");
 
 // Make sure Firebase Admin is initialized once in your app
 if (!admin.apps.length) {
