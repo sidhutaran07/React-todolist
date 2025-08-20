@@ -1,4 +1,4 @@
-Hey what about this
+
 // middleware/verifyToken.js
 const admin = require("firebase-admin");
 
