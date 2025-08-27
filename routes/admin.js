@@ -1,31 +1,18 @@
-// routes/admin.js
-const express = require("express");
-const router = express.Router();
-const admin = require("../admin");
-const verifyToken = require("../middleware/verifyToken");
+// Temporary route to create first admin
+router.post("/make-first-admin", async (req, res) => {
+  const { uid, secret } = req.body;
 
-// Promote user to admin
-router.post("/make-admin", verifyToken, async (req, res) => {
+  // Check secret against environment variable
+  if (secret !== process.env.ADMIN_SECRET_KEY) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
   try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ error: "Not authorized" });
-    }
-
-    const { target } = req.body;
-    if (!target) return res.status(400).json({ error: "Missing target (email or uid)" });
-
-    let uid = target;
-    if (target.includes("@")) {
-      const userRecord = await admin.auth().getUserByEmail(target);
-      uid = userRecord.uid;
-    }
-
+    // Set admin custom claim in Firebase
     await admin.auth().setCustomUserClaims(uid, { admin: true });
-    res.json({ message: `✅ User ${uid} promoted to admin` });
+    res.json({ message: `✅ User ${uid} promoted to first admin` });
   } catch (err) {
-    console.error("make-admin error:", err);
+    console.error("make-first-admin error:", err);
     res.status(500).json({ error: err.message });
   }
 });
-
-module.exports = router;
