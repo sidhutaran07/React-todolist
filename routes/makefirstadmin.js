@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const admin = require("../firebaseadmin"); // Firebase Admin SDK
+const admin = require("../firebaseAdmin"); // Firebase Admin SDK
 
 // Promote the first admin from env variable
 router.post("/make-first-admin", async (req, res) => {
