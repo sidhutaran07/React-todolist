@@ -10,3 +10,5 @@ router.post("/make-first-admin", async (req, res) => {
   await admin.auth().setCustomUserClaims(uid, { admin: true });
   res.json({ message: `✅ User ${uid} promoted to first admin` });
 });
+// ✅ Export the router so Express can use it
+module.exports = router;
