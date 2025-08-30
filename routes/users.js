@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 
-const ADMIN_EMAIL = 'taranpreetsingh294@gmail.com';
+// ✅ Use environment variable instead of hardcoded email
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
 // Admin Authorization Middleware
 const isAdmin = (req, res, next) => {
@@ -16,18 +17,9 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
-// --- CHANGE ---
-// We have REMOVED the global 'router.use(isAdmin)' from here.
-// Now we will add 'isAdmin' to each route that needs protection.
-
 //-- ROUTES --//
 
-/**
- * @route   GET /api/users
- * @desc    Get all users (Admin Only)
- * @access  Private
- */
-// This route is now protected by adding 'isAdmin' middleware directly to it.
+// Get all users (Admin only)
 router.get('/', isAdmin, async (req, res) => {
   try {
     const users = await User.find();
@@ -37,12 +29,7 @@ router.get('/', isAdmin, async (req, res) => {
   }
 });
 
-/**
- * @route   POST /api/users
- * @desc    Create a new user (For anyone to use)
- * @access  Public
- */
-// This route is now PUBLIC because we have NOT added the 'isAdmin' middleware.
+// Create a new user (Public)
 router.post('/', async (req, res) => {
   const { name, email, qualification, contact, socialMedia } = req.body;
   const newUser = new User({ name, email, qualification, contact, socialMedia });
@@ -54,20 +41,12 @@ router.post('/', async (req, res) => {
   }
 });
 
-/**
- * @route   GET /api/users/:id
- * @desc    Get a single user by ID (Admin Only)
- * @access  Private
- */
+// Get single user (Admin only)
 router.get('/:id', isAdmin, getUser, (req, res) => {
   res.json(res.user);
 });
 
-/**
- * @route   PATCH /api/users/:id
- * @desc    Update a user (Admin Only)
- * @access  Private
- */
+// Update user (Admin only)
 router.patch('/:id', isAdmin, getUser, async (req, res) => {
   const fieldsToUpdate = ['name', 'email', 'qualification', 'contact', 'socialMedia'];
   fieldsToUpdate.forEach(field => {
@@ -83,11 +62,7 @@ router.patch('/:id', isAdmin, getUser, async (req, res) => {
   }
 });
 
-/**
- * @route   DELETE /api/users/:id
- * @desc    Delete a user (Admin Only)
- * @access  Private
- */
+// Delete user (Admin only)
 router.delete('/:id', isAdmin, getUser, async (req, res) => {
   try {
     await res.user.deleteOne();
@@ -97,13 +72,12 @@ router.delete('/:id', isAdmin, getUser, async (req, res) => {
   }
 });
 
-
-//-- MIDDLEWARE to find a single user by ID --//
+// Middleware to find a user by ID
 async function getUser(req, res, next) {
   let user;
   try {
     user = await User.findById(req.params.id);
-    if (user == null) {
+    if (!user) {
       return res.status(404).json({ message: 'Cannot find user' });
     }
   } catch (err) {
