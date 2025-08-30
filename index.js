@@ -2,7 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-
+const leadsRouter = require('./routes/leads');
+const usersRouter = require('./routes/users');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -18,9 +19,8 @@ mongoose.connect(process.env.MONGO_URI)
 // API Routes
 app.use('/api/todo', require('./routes/todo'));
 
-app.use('/api/leads', require('./routes/leads'));
-
-app.use('api/is-admin', require('./routes/isAdmin'));
+app.use('/api/leads', leadsRouter);
+app.use('/api/users', usersRouter);
 // Start the server
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
