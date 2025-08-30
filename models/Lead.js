@@ -1,12 +1,10 @@
-const mongoose = require("mongoose");
+// Backend: models/Lead.js (MongoDB Model for Leads)
+const mongoose = require('mongoose');
 
-const leadSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    email: { type: String, required: true },
-    userId: { type: String, required: true }, // who created it
-  },
-  { timestamps: true }
-);
+const leadSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  interestedIn: { type: String, required: true, enum: ['A', 'B'] },
+});
 
-module.exports = mongoose.model("Lead", leadSchema);
+module.exports = mongoose.model('Lead', leadSchema);
