@@ -1,89 +1,109 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
+const Lead = require('../models/Lead');
 
-// ✅ Use environment variable instead of hardcoded email
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+// --- Admin Email from Environment Variable ---
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'z@y.com';
 
-// Admin Authorization Middleware
+// --- Admin Authorization Middleware ---
 const isAdmin = (req, res, next) => {
   const userEmail = req.headers['x-user-email'];
+
   if (!userEmail) {
     return res.status(401).json({ message: 'Access Denied: No user email provided.' });
   }
+
   if (userEmail !== ADMIN_EMAIL) {
     return res.status(403).json({ message: 'Access Denied: You do not have permission.' });
   }
+
   next();
 };
 
-//-- ROUTES --//
+// -------------------- ROUTES -------------------- //
 
-// Get all users (Admin only)
+/**
+ * @route   POST /api/leads
+ * @desc    Create a new lead (✅ PUBLIC for form submissions)
+ */
+router.post('/', async (req, res) => {
+  const newLead = new Lead({
+    name: req.body.name,
+    email: req.body.email,
+    interestedIn: req.body.interestedIn,
+  });
+
+  try {
+    const savedLead = await newLead.save();
+    res.status(201).json(savedLead);
+  } catch (err) {
+    res.status(400).json({ message: 'Failed to create lead: ' + err.message });
+  }
+});
+
+/**
+ * @route   GET /api/leads
+ * @desc    Get all leads (❌ ADMIN ONLY)
+ */
 router.get('/', isAdmin, async (req, res) => {
   try {
-    const users = await User.find();
-    res.json(users);
+    const leads = await Lead.find();
+    res.json(leads);
   } catch (err) {
     res.status(500).json({ message: 'Server Error: ' + err.message });
   }
 });
 
-// Create a new user (Public)
-router.post('/', async (req, res) => {
-  const { name, email, qualification, contact, socialMedia } = req.body;
-  const newUser = new User({ name, email, qualification, contact, socialMedia });
+/**
+ * @route   GET /api/leads/:id
+ * @desc    Get a single lead by ID (❌ ADMIN ONLY)
+ */
+router.get('/:id', isAdmin, getLead, (req, res) => {
+  res.json(res.lead);
+});
+
+/**
+ * @route   PATCH /api/leads/:id
+ * @desc    Update a lead (❌ ADMIN ONLY)
+ */
+router.patch('/:id', isAdmin, getLead, async (req, res) => {
+  if (req.body.name != null) res.lead.name = req.body.name;
+  if (req.body.email != null) res.lead.email = req.body.email;
+  if (req.body.interestedIn != null) res.lead.interestedIn = req.body.interestedIn;
+
   try {
-    const savedUser = await newUser.save();
-    res.status(201).json(savedUser);
+    const updatedLead = await res.lead.save();
+    res.json(updatedLead);
   } catch (err) {
-    res.status(400).json({ message: 'Failed to create user: ' + err.message });
+    res.status(400).json({ message: 'Failed to update lead: ' + err.message });
   }
 });
 
-// Get single user (Admin only)
-router.get('/:id', isAdmin, getUser, (req, res) => {
-  res.json(res.user);
-});
-
-// Update user (Admin only)
-router.patch('/:id', isAdmin, getUser, async (req, res) => {
-  const fieldsToUpdate = ['name', 'email', 'qualification', 'contact', 'socialMedia'];
-  fieldsToUpdate.forEach(field => {
-    if (req.body[field] != null) {
-      res.user[field] = req.body[field];
-    }
-  });
+/**
+ * @route   DELETE /api/leads/:id
+ * @desc    Delete a lead (❌ ADMIN ONLY)
+ */
+router.delete('/:id', isAdmin, getLead, async (req, res) => {
   try {
-    const updatedUser = await res.user.save();
-    res.json(updatedUser);
-  } catch (err) {
-    res.status(400).json({ message: 'Failed to update user: ' + err.message });
-  }
-});
-
-// Delete user (Admin only)
-router.delete('/:id', isAdmin, getUser, async (req, res) => {
-  try {
-    await res.user.deleteOne();
-    res.json({ message: 'Successfully deleted user' });
+    await res.lead.deleteOne();
+    res.json({ message: 'Successfully deleted lead' });
   } catch (err) {
     res.status(500).json({ message: 'Server Error: ' + err.message });
   }
 });
 
-// Middleware to find a user by ID
-async function getUser(req, res, next) {
-  let user;
+// -- Helper Middleware to fetch a lead --
+async function getLead(req, res, next) {
+  let lead;
   try {
-    user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: 'Cannot find user' });
+    lead = await Lead.findById(req.params.id);
+    if (lead == null) {
+      return res.status(404).json({ message: 'Cannot find lead' });
     }
   } catch (err) {
     return res.status(500).json({ message: 'Server Error: ' + err.message });
   }
-  res.user = user;
+  res.lead = lead;
   next();
 }
 
