@@ -1,34 +1,34 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User'); // Adjust the path to your User model if necessary
+const User = require('../models/User');
 
-// --- Re-using the same security logic ---
 const ADMIN_EMAIL = 'taranpreetsingh294@gmail.com';
 
-// Admin Authorization Middleware (ensures only the admin can access these routes)
+// Admin Authorization Middleware
 const isAdmin = (req, res, next) => {
   const userEmail = req.headers['x-user-email'];
-
   if (!userEmail) {
     return res.status(401).json({ message: 'Access Denied: No user email provided.' });
   }
   if (userEmail !== ADMIN_EMAIL) {
-    return res.status(403).json({ message: 'Access Denied: You do not have permission to perform this action.' });
+    return res.status(403).json({ message: 'Access Denied: You do not have permission.' });
   }
   next();
 };
 
-// Apply the admin middleware to ALL routes defined in this file.
-router.use(isAdmin);
-
+// --- CHANGE ---
+// We have REMOVED the global 'router.use(isAdmin)' from here.
+// Now we will add 'isAdmin' to each route that needs protection.
 
 //-- ROUTES --//
 
 /**
  * @route   GET /api/users
  * @desc    Get all users (Admin Only)
+ * @access  Private
  */
-router.get('/', async (req, res) => {
+// This route is now protected by adding 'isAdmin' middleware directly to it.
+router.get('/', isAdmin, async (req, res) => {
   try {
     const users = await User.find();
     res.json(users);
@@ -39,19 +39,13 @@ router.get('/', async (req, res) => {
 
 /**
  * @route   POST /api/users
- * @desc    Create a new user (Admin Only)
+ * @desc    Create a new user (For anyone to use)
+ * @access  Public
  */
+// This route is now PUBLIC because we have NOT added the 'isAdmin' middleware.
 router.post('/', async (req, res) => {
   const { name, email, qualification, contact, socialMedia } = req.body;
-
-  const newUser = new User({
-    name,
-    email,
-    qualification,
-    contact,
-    socialMedia,
-  });
-
+  const newUser = new User({ name, email, qualification, contact, socialMedia });
   try {
     const savedUser = await newUser.save();
     res.status(201).json(savedUser);
@@ -63,25 +57,24 @@ router.post('/', async (req, res) => {
 /**
  * @route   GET /api/users/:id
  * @desc    Get a single user by ID (Admin Only)
+ * @access  Private
  */
-router.get('/:id', getUser, (req, res) => {
-  // The 'getUser' middleware has already found the user for us
+router.get('/:id', isAdmin, getUser, (req, res) => {
   res.json(res.user);
 });
 
 /**
  * @route   PATCH /api/users/:id
  * @desc    Update a user (Admin Only)
+ * @access  Private
  */
-router.patch('/:id', getUser, async (req, res) => {
-  // Dynamically update fields that are present in the request body
+router.patch('/:id', isAdmin, getUser, async (req, res) => {
   const fieldsToUpdate = ['name', 'email', 'qualification', 'contact', 'socialMedia'];
   fieldsToUpdate.forEach(field => {
     if (req.body[field] != null) {
       res.user[field] = req.body[field];
     }
   });
-
   try {
     const updatedUser = await res.user.save();
     res.json(updatedUser);
@@ -93,8 +86,9 @@ router.patch('/:id', getUser, async (req, res) => {
 /**
  * @route   DELETE /api/users/:id
  * @desc    Delete a user (Admin Only)
+ * @access  Private
  */
-router.delete('/:id', getUser, async (req, res) => {
+router.delete('/:id', isAdmin, getUser, async (req, res) => {
   try {
     await res.user.deleteOne();
     res.json({ message: 'Successfully deleted user' });
@@ -118,6 +112,5 @@ async function getUser(req, res, next) {
   res.user = user;
   next();
 }
-
 
 module.exports = router;
