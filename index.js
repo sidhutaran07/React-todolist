@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const leadsRouter = require('./routes/leads');
 const usersRouter = require('./routes/users');
+const itemsRouter = require ('./routes/items');
 const app = express();
 const port = process.env.PORT || 5000;
 // 1. Import the admin router near the top with your other imports
@@ -26,7 +27,7 @@ app.use('/api/todo', require('./routes/todo'));
 
 app.use('/api/leads', leadsRouter);
 app.use('/api/users', usersRouter);
-
+app.use('/api/items', itemsRouter);
 // 2. Tell the Express app to use the router
 app.use('/api/admin', adminRouter);
 // Start the server
